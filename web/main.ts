@@ -901,11 +901,16 @@ class GitGraphView {
 				: '';
 
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (mutedCommits[i] ? ' mute' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' +
-				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
-				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
-				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
-				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
+				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + getResizeColHtml(0) + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td>' + getResizeColHtml(1) + '<span class="description">' + commitDot : '<td>' + getResizeColHtml(0) + '</td><td>' + getResizeColHtml(1) + '<span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
+				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + getResizeColHtml(2) + date.formatted + '</td>' : '') +
+				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + getResizeColHtml(3) + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
+				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + getResizeColHtml(4) + abbrevCommit(commit.hash) + '</td>' : '') +
 				'</tr>';
+
+
+		}
+		function getResizeColHtml(col:number) {
+			 return (col > 0 ? '<span class="resizeCol left" data-col="' + (col - 1) + '"></span>' : '') + (col < 4 ? '<span class="resizeCol right" data-col="' + col + '"></span>' : '');
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';

@@ -283,10 +283,20 @@ code{
 }
 .resizeCol.left{
 	left:0;
-	border-left:1px solid rgba(128,128,128,0.25);
 }
 .resizeCol.right{
 	right:0;
+}
+
+table { border-collapse: collapse; }
+.commit>td, #tableColHeaders>th {
+  border-right: solid 1px rgba(128,128,128,0.25);
+}
+.commit>td{
+	position:relative;
+}
+#tableColHeaders>th:last-child, .commit>td:last-child {
+    border-right: none;
 }
 
 
