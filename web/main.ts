@@ -56,7 +56,6 @@ class GitGraphView {
 	private readonly footerElem: HTMLElement;
 	private readonly showRemoteBranchesElem: HTMLInputElement;
 	private readonly refreshBtnElem: HTMLElement;
-	private readonly scrollShadowElem: HTMLElement;
 
 	constructor(viewElem: HTMLElement, prevState: WebViewState | null) {
 		this.gitRepos = initialState.repos;
@@ -78,7 +77,6 @@ class GitGraphView {
 		this.tableElem = document.getElementById('commitTable')!;
 		this.tableColHeadersElem = document.getElementById('tableColHeaders')!;
 		this.footerElem = document.getElementById('footer')!;
-		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 
 		viewElem.focus();
 
@@ -855,8 +853,7 @@ class GitGraphView {
 			markdown: this.config.markdown
 		});
 
-		const stickyClassAttr = this.config.stickyHeader ? ' class="sticky"' : '';
-		let html = '<tr id="tableColHeaders"' + stickyClassAttr + '><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
+		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
 			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
@@ -1987,16 +1984,6 @@ class GitGraphView {
 		if (!this.tableColHeadersElem) {
 			return;
 		}
-
-		const controlsHeight = this.controlsElem.offsetHeight;
-		const controlsWidth = this.controlsElem.offsetWidth;
-		const tableColHeadersHeight = this.tableColHeadersElem.offsetHeight;
-		const bottomBorderWidth = 1;
-		const shadowYPos = controlsHeight + tableColHeadersHeight + bottomBorderWidth;
-
-		this.tableColHeadersElem.style.top = `${controlsHeight}px`;
-		this.scrollShadowElem.style.top = `${shadowYPos}px`;
-		this.scrollShadowElem.style.width = `${controlsWidth}px`;
 	}
 
 
@@ -2064,12 +2051,10 @@ class GitGraphView {
 
 	private observeViewScroll() {
 		let active = this.viewElem.scrollTop > 0, timeout: NodeJS.Timer | null = null;
-		this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
 		this.viewElem.addEventListener('scroll', () => {
 			const scrollTop = this.viewElem.scrollTop;
 			if (active !== scrollTop > 0) {
 				active = scrollTop > 0;
-				this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
 			}
 
 			if (this.config.loadMoreCommitsAutomatically && this.moreCommitsAvailable && !this.currentRepoRefreshState.inProgress) {
