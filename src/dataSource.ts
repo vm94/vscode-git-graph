@@ -1550,7 +1550,7 @@ export class DataSource extends Disposable {
 		}
 		if(authors !== null) {
 			for (let i = 0; i < authors.length; i++) {
-				args.push(`--author=${authors[i]}`);
+				args.push(`--author=${authors[i]} <`);
 			}
 		}
 		if (branches !== null) {
