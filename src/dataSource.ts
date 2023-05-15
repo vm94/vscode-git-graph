@@ -6,8 +6,8 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
+import {ActionedUser, CommitOrdering, DateType, DeepWriteable, ErrorInfo, ErrorInfoExtensionPrefix, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { GitExecutable, GitVersionRequirement, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -17,18 +17,21 @@ const INVALID_BRANCH_REGEXP = /^\(.* .*\)$/;
 const REMOTE_HEAD_BRANCH_REGEXP = /^remotes\/.*\/HEAD$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
-export const GIT_CONFIG = {
-	DIFF: {
-		GUI_TOOL: 'diff.guitool',
-		TOOL: 'diff.tool'
-	},
-	REMOTE: {
-		PUSH_DEFAULT: 'remote.pushdefault'
-	},
-	USER: {
-		EMAIL: 'user.email',
-		NAME: 'user.name'
-	}
+export const enum GitConfigKey {
+	DiffGuiTool = 'diff.guitool',
+	DiffTool = 'diff.tool',
+	RemotePushDefault = 'remote.pushdefault',
+	UserEmail = 'user.email',
+	UserName = 'user.name'
+}
+
+const GPG_STATUS_CODE_PARSING_DETAILS: Readonly<{ [statusCode: string]: GpgStatusCodeParsingDetails }> = {
+	'GOODSIG': { status: GitSignatureStatus.GoodAndValid, uid: true },
+	'BADSIG': { status: GitSignatureStatus.Bad, uid: true },
+	'ERRSIG': { status: GitSignatureStatus.CannotBeChecked, uid: false },
+	'EXPSIG': { status: GitSignatureStatus.GoodButExpired, uid: true },
+	'EXPKEYSIG': { status: GitSignatureStatus.GoodButMadeByExpiredKey, uid: true },
+	'REVKEYSIG': { status: GitSignatureStatus.GoodButMadeByRevokedKey, uid: true }
 };
 
 /**
@@ -86,9 +89,9 @@ export class DataSource extends Disposable {
 	 * Set the Git executable used by the DataSource.
 	 * @param gitExecutable The Git executable.
 	 */
-	public setGitExecutable(gitExecutable: GitExecutable | null) {
+	private setGitExecutable(gitExecutable: GitExecutable | null) {
 		this.gitExecutable = gitExecutable;
-		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? doesVersionMeetRequirement(gitExecutable.version, '2.4.0') : false;
+		this.gitExecutableSupportsGpgInfo = gitExecutable !== null && doesVersionMeetRequirement(gitExecutable.version, GitVersionRequirement.GpgInfo);
 		this.generateGitCommandFormats();
 	}
 
@@ -137,12 +140,12 @@ export class DataSource extends Disposable {
 			this.getRemotes(repo),
 			showStashes ? this.getStashes(repo) : Promise.resolve([])
 		]).then((results) => {
+			/* eslint no-console: "error" */
 			return { branches: results[0].branches, head: results[0].head, remotes: results[1], stashes: results[2], error: null };
 		}).catch((errorMessage) => {
 			return { branches: [], head: null, remotes: [], stashes: [], error: errorMessage };
 		});
 	}
-
 	/**
 	 * Get the commits in a repository.
 	 * @param repo The path of the repository.
@@ -158,10 +161,10 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns The commits in the repository.
 	 */
-	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: ReadonlyArray<string> | null, authors: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
-			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
+			this.getLog(repo, branches, authors, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
 			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
 			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
@@ -279,9 +282,10 @@ export class DataSource extends Disposable {
 		return Promise.all([
 			this.getConfigList(repo),
 			this.getConfigList(repo, GitConfigLocation.Local),
-			this.getConfigList(repo, GitConfigLocation.Global)
+			this.getConfigList(repo, GitConfigLocation.Global),
+			this.getAuthorList(repo)
 		]).then((results) => {
-			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2];
+			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2], authors = results[3];
 
 			const branches: GitRepoConfigBranches = {};
 			Object.keys(localConfigs).forEach((key) => {
@@ -301,13 +305,13 @@ export class DataSource extends Disposable {
 					}
 				}
 			});
-
 			return {
 				config: {
 					branches: branches,
-					diffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL),
-					guiDiffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL),
-					pushDefault: getConfigValue(consolidatedConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
+					 authors,
+					diffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffTool),
+					guiDiffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffGuiTool),
+					pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
 					remotes: remotes.map((remote) => ({
 						name: remote,
 						url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
@@ -315,12 +319,12 @@ export class DataSource extends Disposable {
 					})),
 					user: {
 						name: {
-							local: getConfigValue(localConfigs, GIT_CONFIG.USER.NAME),
-							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.NAME)
+							local: getConfigValue(localConfigs, GitConfigKey.UserName),
+							global: getConfigValue(globalConfigs, GitConfigKey.UserName)
 						},
 						email: {
-							local: getConfigValue(localConfigs, GIT_CONFIG.USER.EMAIL),
-							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.EMAIL)
+							local: getConfigValue(localConfigs, GitConfigKey.UserEmail),
+							global: getConfigValue(globalConfigs, GitConfigKey.UserEmail)
 						}
 					}
 				},
@@ -331,7 +335,53 @@ export class DataSource extends Disposable {
 		});
 	}
 
-
+	private async getAuthorList(repo: string): Promise<ActionedUser[]> {
+		const args = ['shortlog', '-e', '-s', '-n', 'HEAD'];
+		const dict = new Set<string>();
+		const result = await this.spawnGit(args, repo, (authors) => {
+			return authors.split(/\r?\n/g)
+				.map(line => line.trim())
+				.filter(line => line.trim().length > 0)
+				.map(line => line.substring(line.indexOf('\t') + 1))
+				.map(line => {
+					const indexOfEmailSeparator = line.indexOf('<');
+					if (indexOfEmailSeparator === -1) {
+						return {
+							name: line.trim(),
+							email: ''
+						};
+					} else {
+						const nameParts = line.split('<');
+						const name = nameParts.shift()!.trim();
+						const email = nameParts[0].substring(0, nameParts[0].length - 1).trim();
+						return {
+							name,
+							email
+						};
+					}
+				})
+				.filter(item => {
+					if (dict.has(item.name)) {
+						return false;
+					}
+					dict.add(item.name);
+					return true;
+				})
+				.sort((a, b) => (a.name > b.name ? 1 : -1));
+		}).catch((errorMessage) => {
+			if (typeof errorMessage === 'string') {
+				const message = errorMessage.toLowerCase();
+				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
+					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
+					return {};
+				}
+			} else {
+				errorMessage = 'An unexpected error occurred while spawning the Git child process.';
+			}
+			throw errorMessage;
+		}) as Promise<ActionedUser[]>;
+		return result;
+	}
 	/* Get Data Methods - Commit Details View */
 
 	/**
@@ -494,21 +544,37 @@ export class DataSource extends Disposable {
 	 * @returns The tag details.
 	 */
 	public getTagDetails(repo: string, tagName: string): Promise<GitTagDetailsData> {
-		return this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout) => {
-			let data = stdout.split(GIT_LOG_SEPARATOR);
+		if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, GitVersionRequirement.TagDetails)) {
+			return Promise.resolve({ details: null, error: constructIncompatibleGitVersionMessage(this.gitExecutable, GitVersionRequirement.TagDetails, 'retrieving Tag Details') });
+		}
+
+		const ref = 'refs/tags/' + tagName;
+		return this.spawnGit(['for-each-ref', ref, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents:signature)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout) => {
+			const data = stdout.split(GIT_LOG_SEPARATOR);
 			return {
-				tagHash: data[0],
-				name: data[1],
-				email: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
-				date: parseInt(data[3]),
-				message: removeTrailingBlankLines(data[4].split(EOL_REGEX)).join('\n'),
-				error: null
+				hash: data[0],
+				taggerName: data[1],
+				taggerEmail: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
+				taggerDate: parseInt(data[3]),
+				message: removeTrailingBlankLines(data.slice(5).join(GIT_LOG_SEPARATOR).replace(data[4], '').split(EOL_REGEX)).join('\n'),
+				signed: data[4] !== ''
 			};
-		}).then((data) => {
-			return data;
-		}).catch((errorMessage) => {
-			return { tagHash: '', name: '', email: '', date: 0, message: '', error: errorMessage };
-		});
+		}).then(async (tag) => ({
+			details: {
+				hash: tag.hash,
+				taggerName: tag.taggerName,
+				taggerEmail: tag.taggerEmail,
+				taggerDate: tag.taggerDate,
+				message: tag.message,
+				signature: tag.signed
+					? await this.getTagSignature(repo, ref)
+					: null
+			},
+			error: null
+		})).catch((errorMessage) => ({
+			details: null,
+			error: errorMessage
+		}));
 	}
 
 	/**
@@ -733,8 +799,8 @@ export class DataSource extends Disposable {
 		if (pruneTags) {
 			if (!prune) {
 				return Promise.resolve('In order to Prune Tags, pruning must also be enabled when fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
-			} else if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, '2.17.0')) {
-				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
+			} else if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, GitVersionRequirement.FetchAndPruneTags)) {
+				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, GitVersionRequirement.FetchAndPruneTags, 'pruning tags when fetching'));
 			}
 			args.push('--prune-tags');
 		}
@@ -761,17 +827,6 @@ export class DataSource extends Disposable {
 	}
 
 	/**
-	 * Push a tag to a remote.
-	 * @param repo The path of the repository.
-	 * @param tagName The name of the tag to push.
-	 * @param remote The remote to push the tag to.
-	 * @returns The ErrorInfo from the executed command.
-	 */
-	public pushTag(repo: string, tagName: string, remote: string) {
-		return this.runGitCommand(['push', remote, tagName], repo);
-	}
-
-	/**
 	 * Push a branch to multiple remotes.
 	 * @param repo The path of the repository.
 	 * @param branchName The name of the branch to push.
@@ -795,20 +850,30 @@ export class DataSource extends Disposable {
 	}
 
 	/**
-	 * Push a tag to multiple remotes.
+	 * Push a tag to remote(s).
 	 * @param repo The path of the repository.
 	 * @param tagName The name of the tag to push.
-	 * @param remote The remotes to push the tag to.
+	 * @param remotes The remote(s) to push the tag to.
+	 * @param commitHash The commit hash the tag is on.
+	 * @param skipRemoteCheck Skip checking that the tag is on each of the `remotes`.
 	 * @returns The ErrorInfo's from the executed commands.
 	 */
-	public async pushTagToMultipleRemotes(repo: string, tagName: string, remotes: string[]): Promise<ErrorInfo[]> {
+	public async pushTag(repo: string, tagName: string, remotes: string[], commitHash: string, skipRemoteCheck: boolean): Promise<ErrorInfo[]> {
 		if (remotes.length === 0) {
 			return ['No remote(s) were specified to push the tag ' + tagName + ' to.'];
 		}
 
+		if (!skipRemoteCheck) {
+			const remotesContainingCommit = await this.getRemotesContainingCommit(repo, commitHash, remotes).catch(() => remotes);
+			const remotesNotContainingCommit = remotes.filter((remote) => !remotesContainingCommit.includes(remote));
+			if (remotesNotContainingCommit.length > 0) {
+				return [ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote + JSON.stringify(remotesNotContainingCommit)];
+			}
+		}
+
 		const results: ErrorInfo[] = [];
 		for (let i = 0; i < remotes.length; i++) {
-			const result = await this.pushTag(repo, tagName, remotes[i]);
+			const result = await this.runGitCommand(['push', remotes[i], tagName], repo);
 			results.push(result);
 			if (result !== null) break;
 		}
@@ -865,15 +930,11 @@ export class DataSource extends Disposable {
 	 * Delete a branch in a repository.
 	 * @param repo The path of the repository.
 	 * @param branchName The name of the branch.
-	 * @param forceDelete Should the delete be forced.
+	 * @param force Should force the branch to be deleted (even if not merged).
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public deleteBranch(repo: string, branchName: string, forceDelete: boolean) {
-		let args = ['branch', '--delete'];
-		if (forceDelete) args.push('--force');
-		args.push(branchName);
-
-		return this.runGitCommand(args, repo);
+	public deleteBranch(repo: string, branchName: string, force: boolean) {
+		return this.runGitCommand(['branch', force ? '-D' : '-d', branchName], repo);
 	}
 
 	/**
@@ -1114,23 +1175,23 @@ export class DataSource extends Disposable {
 	/**
 	 * Set a configuration value for a repository.
 	 * @param repo The path of the repository.
-	 * @param key The key to be set.
+	 * @param key The Git Config Key to be set.
 	 * @param value The value to be set.
 	 * @param location The location where the configuration value should be set.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public setConfigValue(repo: string, key: string, value: string, location: GitConfigLocation) {
+	public setConfigValue(repo: string, key: GitConfigKey, value: string, location: GitConfigLocation) {
 		return this.runGitCommand(['config', '--' + location, key, value], repo);
 	}
 
 	/**
 	 * Unset a configuration value for a repository.
 	 * @param repo The path of the repository.
-	 * @param key The key to be unset.
+	 * @param key The Git Config Key to be unset.
 	 * @param location The location where the configuration value should be unset.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public unsetConfigValue(repo: string, key: string, location: GitConfigLocation) {
+	public unsetConfigValue(repo: string, key: GitConfigKey, location: GitConfigLocation) {
 		return this.runGitCommand(['config', '--' + location, '--unset-all', key], repo);
 	}
 
@@ -1145,6 +1206,20 @@ export class DataSource extends Disposable {
 	 */
 	public cleanUntrackedFiles(repo: string, directories: boolean) {
 		return this.runGitCommand(['clean', '-f' + (directories ? 'd' : '')], repo);
+	}
+
+
+	/* Git Action Methods - File */
+
+	/**
+	 * Reset a file to the specified revision.
+	 * @param repo The path of the repository.
+	 * @param commitHash The commit to reset the file to.
+	 * @param filePath The file to reset.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public resetFileToRevision(repo: string, commitHash: string, filePath: string) {
+		return this.runGitCommand(['checkout', commitHash, '--', filePath], repo);
 	}
 
 
@@ -1211,8 +1286,8 @@ export class DataSource extends Disposable {
 	public pushStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
-		} else if (!doesVersionMeetRequirement(this.gitExecutable.version, '2.13.2')) {
-			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.13.2'));
+		} else if (!doesVersionMeetRequirement(this.gitExecutable.version, GitVersionRequirement.PushStash)) {
+			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, GitVersionRequirement.PushStash));
 		}
 
 		let args = ['stash', 'push'];
@@ -1468,10 +1543,15 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns An array of commits.
 	 */
-	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
+	private getLog(repo: string, branches: ReadonlyArray<string> | null, authors: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
 		const args = ['-c', 'log.showSignature=false', 'log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (onlyFollowFirstParent) {
 			args.push('--first-parent');
+		}
+		if(authors !== null) {
+			for (let i = 0; i < authors.length; i++) {
+				args.push(`--author=${authors[i]} <`);
+			}
 		}
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
@@ -1491,7 +1571,6 @@ export class DataSource extends Disposable {
 					});
 				}
 			}
-
 			// Add the unique list of base hashes of stashes, so that commits only referenced by stashes are displayed
 			const stashBaseHashes = stashes.map((stash) => stash.baseHash);
 			stashBaseHashes.filter((hash, index) => stashBaseHashes.indexOf(hash) === index).forEach((hash) => args.push(hash));
@@ -1499,6 +1578,8 @@ export class DataSource extends Disposable {
 			args.push('HEAD');
 		}
 		args.push('--');
+
+
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);
@@ -1555,6 +1636,29 @@ export class DataSource extends Disposable {
 	}
 
 	/**
+	 * Get all of the remotes that contain the specified commit hash.
+	 * @param repo The path of the repository.
+	 * @param commitHash The commit hash to test.
+	 * @param knownRemotes The list of known remotes to check for.
+	 * @returns A promise resolving to a list of remote names.
+	 */
+	private getRemotesContainingCommit(repo: string, commitHash: string, knownRemotes: string[]) {
+		return this.spawnGit(['branch', '-r', '--no-color', '--contains=' + commitHash], repo, (stdout) => {
+			// Get the names of all known remote branches that contain commitHash
+			const branchNames = stdout.split(EOL_REGEX)
+				.filter((line) => line.length > 2)
+				.map((line) => line.substring(2).split(' -> ')[0])
+				.filter((branchName) => !INVALID_BRANCH_REGEXP.test(branchName));
+
+			// Get all the remotes that are the prefix of at least one remote branch name
+			return knownRemotes.filter((knownRemote) => {
+				const knownRemotePrefix = knownRemote + '/';
+				return branchNames.some((branchName) => branchName.startsWith(knownRemotePrefix));
+			});
+		});
+	}
+
+	/**
 	 * Get the stashes in a repository.
 	 * @param repo The path of the repository.
 	 * @returns An array of stashes.
@@ -1593,6 +1697,52 @@ export class DataSource extends Disposable {
 			lines.pop();
 			return lines;
 		});
+	}
+
+	/**
+	 * Get the signature of a signed tag.
+	 * @param repo The path of the repository.
+	 * @param ref The reference identifying the tag.
+	 * @returns A Promise resolving to the signature.
+	 */
+	private getTagSignature(repo: string, ref: string): Promise<GitSignature> {
+		return this._spawnGit(['verify-tag', '--raw', ref], repo, (stdout, stderr) => stderr || stdout.toString(), true).then((output) => {
+			const records = output.split(EOL_REGEX)
+				.filter((line) => line.startsWith('[GNUPG:] '))
+				.map((line) => line.split(' '));
+
+			let signature: Writeable<GitSignature> | null = null, trustLevel: string | null = null, parsingDetails: GpgStatusCodeParsingDetails | undefined;
+			for (let i = 0; i < records.length; i++) {
+				parsingDetails = GPG_STATUS_CODE_PARSING_DETAILS[records[i][1]];
+				if (parsingDetails) {
+					if (signature !== null) {
+						throw new Error('Multiple Signatures Exist: As Git currently doesn\'t support them, nor does Git Graph (for consistency).');
+					} else {
+						signature = {
+							status: parsingDetails.status,
+							key: records[i][2],
+							signer: parsingDetails.uid ? records[i].slice(3).join(' ') : '' // When parsingDetails.uid === TRUE, the signer is the rest of the record (so join the remaining arguments)
+						};
+					}
+				} else if (records[i][1].startsWith('TRUST_')) {
+					trustLevel = records[i][1];
+				}
+			}
+
+			if (signature !== null && signature.status === GitSignatureStatus.GoodAndValid && (trustLevel === 'TRUST_UNDEFINED' || trustLevel === 'TRUST_NEVER')) {
+				signature.status = GitSignatureStatus.GoodWithUnknownValidity;
+			}
+
+			if (signature !== null) {
+				return signature;
+			} else {
+				throw new Error('No Signature could be parsed.');
+			}
+		}).catch(() => ({
+			status: GitSignatureStatus.CannotBeChecked,
+			key: '',
+			signer: ''
+		}));
 	}
 
 	/**
@@ -1715,21 +1865,24 @@ export class DataSource extends Disposable {
 	 * Spawn Git, with the return value resolved from `stdout` as a buffer.
 	 * @param args The arguments to pass to Git.
 	 * @param repo The repository to run the command in.
-	 * @param resolveValue A callback invoked to resolve the data from `stdout`.
+	 * @param resolveValue A callback invoked to resolve the data from `stdout` and `stderr`.
+	 * @param ignoreExitCode Ignore the exit code returned by Git (default: `FALSE`).
 	 */
-	private _spawnGit<T>(args: string[], repo: string, resolveValue: { (stdout: Buffer): T }) {
+	private _spawnGit<T>(args: string[], repo: string, resolveValue: { (stdout: Buffer, stderr: string): T }, ignoreExitCode: boolean = false) {
 		return new Promise<T>((resolve, reject) => {
-			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
+			if (this.gitExecutable === null) {
+				return reject(UNABLE_TO_FIND_GIT_MSG);
+			}
 
 			resolveSpawnOutput(cp.spawn(this.gitExecutable.path, args, {
 				cwd: repo,
 				env: Object.assign({}, process.env, this.askpassEnv)
 			})).then((values) => {
-				let status = values[0], stdout = values[1];
-				if (status.code === 0) {
-					resolve(resolveValue(stdout));
+				const status = values[0], stdout = values[1], stderr = values[2];
+				if (status.code === 0 || ignoreExitCode) {
+					resolve(resolveValue(stdout, stderr));
 				} else {
-					reject(getErrorMessage(status.error, stdout, values[2]));
+					reject(getErrorMessage(status.error, stdout, stderr));
 				}
 			});
 
@@ -1915,10 +2068,11 @@ interface GitStatusFiles {
 }
 
 interface GitTagDetailsData {
-	tagHash: string;
-	name: string;
-	email: string;
-	date: number;
-	message: string;
+	details: GitTagDetails | null;
 	error: ErrorInfo;
+}
+
+interface GpgStatusCodeParsingDetails {
+	readonly status: GitSignatureStatus,
+	readonly uid: boolean
 }

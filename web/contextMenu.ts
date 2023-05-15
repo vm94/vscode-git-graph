@@ -83,15 +83,21 @@ class ContextMenu {
 				? 2 - menuBounds.height // context menu fits above
 				: -2 - (menuBounds.height - (frameBounds.height - (event.pageY - frameBounds.top))); // Overlap the context menu vertically with the cursor
 		menu.style.left = (frameElem.scrollLeft + Math.max(event.pageX - frameBounds.left + relativeX, 2)) + 'px';
-		menu.style.top = (frameElem.scrollTop + Math.max(event.pageY - frameBounds.top + relativeY, 2)) + 'px';
+		menu.style.top = Math.max(event.clientY - frameBounds.top + relativeY, 2) + 'px';
 		menu.style.opacity = '1';
 		this.elem = menu;
 		this.onClose = onClose;
 
 		addListenerToClass('contextMenuItem', 'click', (e) => {
+			// The user clicked on a context menu item => call the corresponding handler
 			e.stopPropagation();
 			this.close();
 			handlers[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]();
+		});
+
+		menu.addEventListener('click', (e) => {
+			// The user clicked on the context menu (but not a specific item) => keep the context menu open to allow the user to reattempt clicking on a specific item
+			e.stopPropagation();
 		});
 
 		this.target = target;

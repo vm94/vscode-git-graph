@@ -1,10 +1,10 @@
-import { expectRenamedExtensionSettingToHaveBeenCalled } from './helpers/expectations';
-
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
 import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme, TagType } from '../src/types';
+
+import { expectRenamedExtensionSettingToHaveBeenCalled } from './helpers/expectations';
 
 const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -270,6 +270,7 @@ describe('Config', () => {
 					merge: true,
 					rebase: true,
 					push: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -289,12 +290,24 @@ describe('Config', () => {
 					copyHash: true,
 					copySubject: true
 				},
+				commitDetailsViewFile: {
+					viewDiff: true,
+					viewFileAtThisRevision: true,
+					viewDiffWithWorkingFile: true,
+					openFile: true,
+					markAsReviewed: true,
+					markAsNotReviewed: true,
+					resetFileToThisRevision: true,
+					copyAbsoluteFilePath: true,
+					copyRelativeFilePath: true
+				},
 				remoteBranch: {
 					checkout: true,
 					delete: true,
 					fetch: true,
 					merge: true,
 					pull: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -339,6 +352,7 @@ describe('Config', () => {
 					merge: true,
 					rebase: true,
 					push: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -358,12 +372,24 @@ describe('Config', () => {
 					copyHash: true,
 					copySubject: true
 				},
+				commitDetailsViewFile: {
+					viewDiff: true,
+					viewFileAtThisRevision: true,
+					viewDiffWithWorkingFile: true,
+					openFile: true,
+					markAsReviewed: true,
+					markAsNotReviewed: true,
+					resetFileToThisRevision: true,
+					copyAbsoluteFilePath: true,
+					copyRelativeFilePath: true
+				},
 				remoteBranch: {
 					checkout: true,
 					delete: true,
 					fetch: true,
 					merge: true,
 					pull: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -403,6 +429,9 @@ describe('Config', () => {
 				commit: {
 					checkout: false
 				},
+				commitDetailsViewFile: {
+					resetFileToThisRevision: false
+				},
 				remoteBranch: {
 					delete: true,
 					fetch: false,
@@ -423,6 +452,7 @@ describe('Config', () => {
 					merge: true,
 					rebase: true,
 					push: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -442,12 +472,24 @@ describe('Config', () => {
 					copyHash: true,
 					copySubject: true
 				},
+				commitDetailsViewFile: {
+					viewDiff: true,
+					viewFileAtThisRevision: true,
+					viewDiffWithWorkingFile: true,
+					openFile: true,
+					markAsReviewed: true,
+					markAsNotReviewed: true,
+					resetFileToThisRevision: false,
+					copyAbsoluteFilePath: true,
+					copyRelativeFilePath: true
+				},
 				remoteBranch: {
 					checkout: true,
 					delete: true,
 					fetch: false,
 					merge: true,
 					pull: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -2844,6 +2886,8 @@ describe('Config', () => {
 	describe('retainContextWhenHidden', testBooleanExtensionSetting('retainContextWhenHidden', 'retainContextWhenHidden', true));
 
 	describe('showStatusBarItem', testBooleanExtensionSetting('showStatusBarItem', 'showStatusBarItem', true));
+
+	describe('stickyHeader', testBooleanExtensionSetting('stickyHeader', 'stickyHeader', true));
 
 	describe('tabIconColourTheme', () => {
 		it('Should return TabIconColourTheme.Colour when the configuration value is "colour"', () => {

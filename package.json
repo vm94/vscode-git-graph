@@ -169,6 +169,10 @@
 									"type": "boolean",
 									"title": "Push Branch..."
 								},
+								"viewIssue": {
+									"type": "boolean",
+									"title": "View Issue"
+								},
 								"createPullRequest": {
 									"type": "boolean",
 									"title": "Create Pull Request..."
@@ -240,6 +244,47 @@
 								}
 							}
 						},
+						"commitDetailsViewFile": {
+							"type": "object",
+							"properties": {
+								"viewDiff": {
+									"type": "boolean",
+									"title": "View Diff"
+								},
+								"viewFileAtThisRevision": {
+									"type": "boolean",
+									"title": "View File at this Revision"
+								},
+								"viewDiffWithWorkingFile": {
+									"type": "boolean",
+									"title": "View Diff with Working File"
+								},
+								"openFile": {
+									"type": "boolean",
+									"title": "Open File"
+								},
+								"markAsReviewed": {
+									"type": "boolean",
+									"title": "Mark as Reviewed"
+								},
+								"markAsNotReviewed": {
+									"type": "boolean",
+									"title": "Mark as Not Reviewed"
+								},
+								"resetFileToThisRevision": {
+									"type": "boolean",
+									"title": "Reset File to this Revision..."
+								},
+								"copyAbsoluteFilePath": {
+									"type": "boolean",
+									"title": "Copy Absolute File Path to Clipboard"
+								},
+								"copyRelativeFilePath": {
+									"type": "boolean",
+									"title": "Copy Relative File Path to Clipboard"
+								}
+							}
+						},
 						"remoteBranch": {
 							"type": "object",
 							"properties": {
@@ -262,6 +307,10 @@
 								"pull": {
 									"type": "boolean",
 									"title": "Pull into current branch..."
+								},
+								"viewIssue": {
+									"type": "boolean",
+									"title": "View Issue"
 								},
 								"createPullRequest": {
 									"type": "boolean",
@@ -492,6 +541,11 @@
 						"Commit": true
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
+				},
+				"git-graph.stickyHeader": {
+					"type": "boolean",
+					"default": true,
+					"description": "Keeps the header visible when the view is scrolled"
 				},
 				"git-graph.dialog.addTag.pushToRemote": {
 					"type": "boolean",

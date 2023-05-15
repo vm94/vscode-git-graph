@@ -1,8 +1,14 @@
 # Git Graph extension for Visual Studio Code
 
-View a Git Graph of your repository, and easily perform Git actions from the graph. Configurable to look the way you want!
+Extended version of mhutchies Git Graph.
+Following features were added:
 
-![Recording of Git Graph](https://github.com/mhutchie/vscode-git-graph/raw/master/resources/demo.gif)
+* Added sticky header option (mhutchie#394)
+* Added author filter (hansu#1)
+* Resize column width without header (hansu#4)
+* Added collapse/expand buttons to commit diff view (hansu#6)
+
+![Additions](https://github.com/hansu/vscode-git-graph/raw/hansu-mod/resources/demo.gif)
 
 ## Features
 
