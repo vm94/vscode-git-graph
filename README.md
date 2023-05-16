@@ -1,14 +1,15 @@
 # Git Graph extension for Visual Studio Code
 
-Extended version of mhutchies Git Graph.
-Following features were added:
+Fork of mhutchies Git Graph with further improvements.  
+Main improvements:
 
-* Added sticky header option (mhutchie#394)
-* Added author filter (hansu#1)
-* Resize column width without header (hansu#4)
+* Added button to jump to HEAD (hansu#14)
 * Added collapse/expand buttons to commit diff view (hansu#6)
+* Resize column width without header (hansu#4)
+* Added author filter (hansu#1)
+* Added sticky header option (mhutchie#132)
 
-![Additions](https://github.com/hansu/vscode-git-graph/raw/hansu-mod/resources/demo.gif)
+![Additions](https://github.com/hansu/vscode-git-graph/raw/master/resources/demo.gif)
 
 ## Features
 

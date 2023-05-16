@@ -7,7 +7,7 @@
 		"name": "Michael Hutchison",
 		"email": "mhutchie@16right.com"
 	},
-	"description": "View a Git Graph of your repository, and perform Git actions from the graph.",
+	"description": "Fork of mhutchie's Git Graph with further improvements.",
 	"keywords": [
 		"git",
 		"graph",
@@ -541,11 +541,6 @@
 						"Commit": true
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
-				},
-				"git-graph.stickyHeader": {
-					"type": "boolean",
-					"default": true,
-					"description": "Keeps the header visible when the view is scrolled"
 				},
 				"git-graph.dialog.addTag.pushToRemote": {
 					"type": "boolean",
@@ -1159,6 +1154,11 @@
 					],
 					"default": "Inline",
 					"description": "Specifies where the \"View Git Graph\" action appears on the title of SCM Providers."
+				},
+				"git-graph.stickyHeader": {
+					"type": "boolean",
+					"default": true,
+					"description": "Keeps the header visible when the view is scrolled"
 				},
 				"git-graph.tabIconColourTheme": {
 					"type": "string",
