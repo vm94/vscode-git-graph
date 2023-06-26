@@ -168,10 +168,6 @@ This extension contributes the following commands:
 
 Detailed Release Notes are available [here](CHANGELOG.md).
 
-## Visual Studio Marketplace
-
-This extension is available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=hansu.git-graph) for Visual Studio Code.
-
 ## Acknowledgements
 
 Thank you to all of the contributors that help with the development of Git Graph!
