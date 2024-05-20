@@ -558,6 +558,7 @@ class GitGraphView {
 		if (includeShowAll) {
 			options.push({ name: 'Show All', value: SHOW_ALL_BRANCHES });
 		}
+		options.push({ name: 'HEAD', value: 'HEAD' });
 		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
 			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
 		}
