@@ -256,14 +256,18 @@ class GitGraphView {
 		// Update the state of the fetch button
 		this.renderFetchButton();
 
-		// Configure current branches
-		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			// Filter any branches that are currently selected, but no longer exist
-			const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
-			this.currentBranches = this.currentBranches.filter((branch) =>
-				this.gitBranches.includes(branch) || globPatterns.includes(branch)
-			);
-		}
+		const filterCurrentBranches = () => {
+			// Configure current branches
+			if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
+				// Filter any branches that are currently selected, but no longer exist
+				const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
+				this.currentBranches = this.currentBranches.filter((branch) =>
+					this.gitBranches.includes(branch) || globPatterns.includes(branch) || branch === 'HEAD'
+				);
+			}
+		};
+
+		filterCurrentBranches();
 		if (this.currentBranches === null || this.currentBranches.length === 0) {
 			// No branches are currently selected
 			const onRepoLoadShowCheckedOutBranch = getOnRepoLoadShowCheckedOutBranch(this.gitRepos[this.currentRepo].onRepoLoadShowCheckedOutBranch);
@@ -284,15 +288,8 @@ class GitGraphView {
 				this.currentBranches.push(SHOW_ALL_BRANCHES);
 			}
 		}
+		filterCurrentBranches();
 
-		// Configure current branches
-		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			// Filter any branches that are currently selected, but no longer exist
-			const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
-			this.currentBranches = this.currentBranches.filter((branch) =>
-				this.gitBranches.includes(branch) || globPatterns.includes(branch)
-			);
-		}
 		this.saveState();
 		this.currentAuthors = [];
 		this.currentAuthors.push(SHOW_ALL_BRANCHES);
