@@ -107,9 +107,9 @@ export interface GitRepoConfig {
 }
 
 export type GitRepoConfigBranches = { [branchName: string]: GitRepoConfigBranch };
-export interface ActionedUser{
-    name: string;
-    email: string;
+export interface ActionedUser {
+	name: string;
+	email: string;
 };
 export interface GitRepoConfigBranch {
 	readonly pushRemote: string | null;

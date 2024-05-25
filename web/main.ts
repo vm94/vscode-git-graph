@@ -256,14 +256,18 @@ class GitGraphView {
 		// Update the state of the fetch button
 		this.renderFetchButton();
 
-		// Configure current branches
-		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			// Filter any branches that are currently selected, but no longer exist
-			const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
-			this.currentBranches = this.currentBranches.filter((branch) =>
-				this.gitBranches.includes(branch) || globPatterns.includes(branch)
-			);
-		}
+		const filterCurrentBranches = () => {
+			// Configure current branches
+			if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
+				// Filter any branches that are currently selected, but no longer exist
+				const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
+				this.currentBranches = this.currentBranches.filter((branch) =>
+					this.gitBranches.includes(branch) || globPatterns.includes(branch) || branch === 'HEAD'
+				);
+			}
+		};
+
+		filterCurrentBranches();
 		if (this.currentBranches === null || this.currentBranches.length === 0) {
 			// No branches are currently selected
 			const onRepoLoadShowCheckedOutBranch = getOnRepoLoadShowCheckedOutBranch(this.gitRepos[this.currentRepo].onRepoLoadShowCheckedOutBranch);
@@ -284,15 +288,8 @@ class GitGraphView {
 				this.currentBranches.push(SHOW_ALL_BRANCHES);
 			}
 		}
+		filterCurrentBranches();
 
-		// Configure current branches
-		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			// Filter any branches that are currently selected, but no longer exist
-			const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
-			this.currentBranches = this.currentBranches.filter((branch) =>
-				this.gitBranches.includes(branch) || globPatterns.includes(branch)
-			);
-		}
 		this.saveState();
 		this.currentAuthors = [];
 		this.currentAuthors.push(SHOW_ALL_BRANCHES);
@@ -558,6 +555,7 @@ class GitGraphView {
 		if (includeShowAll) {
 			options.push({ name: 'Show All', value: SHOW_ALL_BRANCHES });
 		}
+		options.push({ name: 'HEAD', value: 'HEAD' });
 		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
 			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
 		}
@@ -569,7 +567,7 @@ class GitGraphView {
 	public getAuthorOptions(): ReadonlyArray<DialogSelectInputOption> {
 		const options: DialogSelectInputOption[] = [];
 		options.push({ name: 'All', value: SHOW_ALL_BRANCHES });
-		if(this.gitConfig && this.gitConfig.authors) {
+		if (this.gitConfig && this.gitConfig.authors) {
 			for (let i = 0; i < this!.gitConfig!.authors.length; i++) {
 				const author = this!.gitConfig!.authors[i];
 				options.push({ name: author.name, value: author.name });
@@ -915,8 +913,8 @@ class GitGraphView {
 
 
 		}
-		function getResizeColHtml(col:number) {
-			 return (col > 0 ? '<span class="resizeCol left" data-col="' + (col - 1) + '"></span>' : '') + (col < 4 ? '<span class="resizeCol right" data-col="' + col + '"></span>' : '');
+		function getResizeColHtml(col: number) {
+			return (col > 0 ? '<span class="resizeCol left" data-col="' + (col - 1) + '"></span>' : '') + (col < 4 ? '<span class="resizeCol right" data-col="' + col + '"></span>' : '');
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
@@ -2942,20 +2940,20 @@ class GitGraphView {
 		this.renderCdvFileViewTypeBtns();
 	}
 
-	private openFolders(open:boolean) {
+	private openFolders(open: boolean) {
 		let expandedCommit = this.expandedCommit;
 		if (expandedCommit === null || expandedCommit.fileTree === null) return;
 		let folders = document.getElementsByClassName('fileTreeFolder');
 		for (let i = 0; i < folders.length; i++) {
 			let sourceElem = <HTMLElement>(folders[i]);
 			let parent = sourceElem.parentElement!;
-			if(open) {
+			if (open) {
 				parent.classList.remove('closed');
 				sourceElem.children[0].children[0].innerHTML = SVG_ICONS.openFolder;
 				parent.children[1].classList.remove('hidden');
 				alterFileTreeFolderOpen(expandedCommit.fileTree, decodeURIComponent(sourceElem.dataset.folderpath!), true);
 
-			} else{
+			} else {
 				parent.classList.add('closed');
 				sourceElem.children[0].children[0].innerHTML = SVG_ICONS.closedFolder;
 				parent.children[1].classList.add('hidden');
@@ -3210,7 +3208,7 @@ class GitGraphView {
 		function setFolderBtns() {
 			let btns = document.getElementsByClassName('cdvFolderBtn');
 			for (let i = 0; i < btns.length; i++) {
-				if(listView)
+				if (listView)
 					btns[i].classList.add('hidden');
 				else
 					btns[i].classList.remove('hidden');
