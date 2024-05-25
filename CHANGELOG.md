@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.31.1 - 2024-05-25
+* #33 Add HEAD in branch filter. Thanks [@ipcjs](https://github.com/ipcjs).
+    This will set the branch filter to the current branch if `HEAD` is selected.
+
 ## 1.31.0 - 2023-05-16
 * #14 Added button to jump to HEAD. Thanks [@QrackEE](https://github.com/QrackEE).
 * #6 Add collapse/expand buttons to commit diff view.
