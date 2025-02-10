@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.32.0 - 2025-02-10
+* Solve context right-click menu dissapeared since 1.97 vscode.
+
 ## 1.31.1 - 2024-05-25
 * #33 Add HEAD in branch filter. Thanks [@ipcjs](https://github.com/ipcjs).
     This will set the branch filter to the current branch if `HEAD` is selected.

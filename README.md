@@ -1,15 +1,15 @@
 # Git Graph extension for Visual Studio Code
 
-Fork of mhutchies Git Graph with further improvements.  
-Main improvements:
+Solve Git Graph issues and keep up with latest VSCode
 
-* Added button to jump to HEAD (hansu#14)
-* Added collapse/expand buttons to commit diff view (hansu#6)
-* Resize column width without header (hansu#4)
-* Added author filter (hansu#1)
+* **<span style="font-size: 1.5em;">Solve context right-click menu dissapeared since 1.97 vscode</span>**
+* Added button to jump to HEAD (git-hub-tig#14)
+* Added collapse/expand buttons to commit diff view (git-hub-tig#6)
+* Resize column width without header (git-hub-tig#4)
+* Added author filter (git-hub-tig#1)
 * Added sticky header option (mhutchie#132)
 
-![Additions](https://github.com/hansu/vscode-git-graph/raw/master/resources/demo.gif)
+![Additions](https://github.com/git-hub-tig/vscode-git-graph/raw/master/resources/demo.gif)
 
 ## Features
 
@@ -54,7 +54,7 @@ Main improvements:
         * Configure "Issue Linking" - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.
         * Configure "Pull Request Creation" - Automates the opening and pre-filling of a Pull Request form, directly from a branches context menu.
             * Support for the publicly hosted Bitbucket, GitHub and GitLab Pull Request providers is built-in.
-            * Custom Pull Request providers can be configured using the Extension Setting `git-graph.customPullRequestProviders` (e.g. for use with privately hosted Pull Request providers). Information on how to configure custom providers is available [here](https://github.com/hansu/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
+            * Custom Pull Request providers can be configured using the Extension Setting `git-graph.customPullRequestProviders` (e.g. for use with privately hosted Pull Request providers). Information on how to configure custom providers is available [here](https://github.com/git-hub-tig/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
         * Export your Git Graph Repository Configuration to a file that can be committed in the repository. It allows others working in the same repository to automatically use the same Git Graph configuration.
     * Keyboard Shortcuts (available in the Git Graph View):
         * `CTRL/CMD + F`: Open the Find Widget.
@@ -76,7 +76,7 @@ Main improvements:
 
 ## Extension Settings
 
-Detailed information of all Git Graph settings is available [here](https://github.com/hansu/vscode-git-graph/wiki/Extension-Settings), including: descriptions, screenshots, default values and types.
+Detailed information of all Git Graph settings is available [here](https://github.com/git-hub-tig/vscode-git-graph/wiki/Extension-Settings), including: descriptions, screenshots, default values and types.
 
 A summary of the Git Graph extension settings are:
 * **Commit Details View**:
@@ -86,10 +86,10 @@ A summary of the Git Graph extension settings are:
             * **Compact Folders**: Render the File Tree in the Commit Details View in a compacted form, such that folders with a single child folder are compressed into a single combined folder element.
         * **Type**: Sets the default type of File View used in the Commit Details View.
     * **Location**: Specifies where the Commit Details View is rendered in the Git Graph View.
-* **Context Menu Actions Visibility**: Customise which context menu actions are visible. For more information, see the documentation [here](https://github.com/hansu/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
+* **Context Menu Actions Visibility**: Customise which context menu actions are visible. For more information, see the documentation [here](https://github.com/git-hub-tig/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
 * **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the "Branches" dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
 * **Custom Emoji Shortcode Mappings**: An array of custom Emoji Shortcode mappings. Example: `[{"shortcode": ":sparkles:", "emoji":"✨"}]`
-* **Custom Pull Request Providers**: An array of custom Pull Request providers that can be used in the "Pull Request Creation" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/hansu/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
+* **Custom Pull Request Providers**: An array of custom Pull Request providers that can be used in the "Pull Request Creation" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/git-hub-tig/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
 * **Date**:
     * **Format**: Specifies the date format to be used in the "Date" column on the Git Graph View.
     * **Type**: Specifies the date type to be displayed in the "Date" column on the Git Graph View, either the author or commit date.

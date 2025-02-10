@@ -1,13 +1,13 @@
 {
 	"name": "git-graph-3",
 	"displayName": "Git Graph 3",
-	"version": "1.31.1",
+	"version": "1.32.0",
 	"publisher": "Gxl",
 	"author": {
 		"name": "Gxl",
 		"email": "gxli@bupt.edu.cn"
 	},
-	"description": "Fork of mhutchie's Git Graph with further improvements.",
+	"description": "Solve Git Graph issues and keep up with latest VSCode",
 	"keywords": [
 		"git",
 		"graph",
