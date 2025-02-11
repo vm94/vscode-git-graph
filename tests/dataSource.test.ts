@@ -4229,8 +4229,8 @@ describe('DataSource', () => {
 				'[submodule "folder/vscode-git-graph-2"]\n' +
 				'	path = folder/vscode-git-graph-2\n' +
 				'	url = https://github.com/mhutchie/vscode-git-graph\n' +
-				'[submodule "folder/vscode-git-graph-3"]\n' +
-				'	path = folder/vscode-git-graph-3\n' +
+				'[submodule "folder/vscode-git-graph-v3"]\n' +
+				'	path = folder/vscode-git-graph-v3\n' +
 				'	url = https://github.com/mhutchie/vscode-git-graph\n'
 			));
 			mockGitSuccessOnce('/path/to/repo/folder/vscode-git-graph-1');
