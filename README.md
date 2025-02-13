@@ -2,11 +2,12 @@
 
 Solve Git Graph issues and keep up with latest VSCode
 
-* **<span style="font-size: 1.5em;">Solve context right-click menu dissapeared since 1.97 vscode</span>**
-* Added button to jump to HEAD (git-hub-tig#14)
-* Added collapse/expand buttons to commit diff view (git-hub-tig#6)
-* Resize column width without header (git-hub-tig#4)
-* Added author filter (git-hub-tig#1)
+* **<span style="font-size: 1.5em;">Solve context right-click menu dissapeared since 1.97 vscode</span> (hansu#38)**
+* Added `HEAD` in branch filter. (hansu#33)
+* Added button to jump to HEAD (hansu#14)
+* Added collapse/expand buttons to commit diff view (hansu#6)
+* Resize column width without header (hansu#4)
+* Added author filter (hansu#1)
 * Added sticky header option (mhutchie#132)
 
 ![Additions](https://github.com/git-hub-tig/vscode-git-graph/raw/master/resources/demo.gif)
