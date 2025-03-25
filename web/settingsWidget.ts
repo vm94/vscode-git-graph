@@ -603,7 +603,10 @@ class SettingsWidget {
 					regExpParseError = null;
 				}
 			} catch (e) {
-				regExpParseError = e.message;
+				// TypeScript 4.4+ treats catch (e) blocks as having type unknown by default (for safety). So it doesn't let you directly access e.message unless you explicitly assert or check the type
+				if (e instanceof Error) {
+					regExpParseError = e.message;
+				}
 			}
 			if (regExpParseError !== null) {
 				dialog.showError('Invalid Issue Regex', regExpParseError, 'Go Back', () => {

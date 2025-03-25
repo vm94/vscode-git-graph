@@ -224,7 +224,10 @@ class FindWidget {
 			} catch (e) {
 				findPattern = null;
 				findGlobalPattern = null;
-				this.widgetElem.setAttribute(ATTR_ERROR, e.message);
+				// TypeScript 4.4+ treats catch (e) blocks as having type unknown by default (for safety). So it doesn't let you directly access e.message unless you explicitly assert or check the type
+				if (e instanceof Error) {
+					this.widgetElem.setAttribute(ATTR_ERROR, e.message);
+				}
 			}
 			if (findPattern !== null && findGlobalPattern !== null) {
 				let commitElems = getCommitElems(), j = 0, commit, zeroLengthMatch = false;

@@ -235,14 +235,14 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'commitDetails':
-				let data = await Promise.all<GitCommitDetailsData, string | null>([
+				let data = await Promise.all([
 					msg.commitHash === UNCOMMITTED
 						? this.dataSource.getUncommittedDetails(msg.repo)
 						: msg.stash === null
 							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.hasParents)
 							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
 					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
-				]);
+				]) as [GitCommitDetailsData, string | null];
 				this.sendMessage({
 					command: 'commitDetails',
 					...data[0],

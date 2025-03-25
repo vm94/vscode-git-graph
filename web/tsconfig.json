@@ -13,6 +13,6 @@
 		"outDir": "../media",
 		"removeComments": true,
 		"strict": true,
-		"target": "es5"
+		"target": "es6" //es5 doesn't allow use of /u and /y regex flags
 	}
 }
