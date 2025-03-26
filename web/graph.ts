@@ -40,8 +40,10 @@ class Branch {
 	private end: number = 0;
 	private lines: Line[] = [];
 	private numUncommitted: number = 0;
+	private name: string;
 
-	constructor(colour: number) {
+	constructor(name: string, colour: number) {
+		this.name = name;
 		this.colour = colour;
 	}
 
@@ -54,6 +56,11 @@ class Branch {
 		}
 	}
 
+	// addint the getter for name
+
+	public getName(): string {
+		return this.name;
+	}
 
 	/* Get / Set */
 
@@ -229,10 +236,17 @@ class Vertex {
 	/* Branch */
 
 	public addToBranch(branch: Branch, x: number) {
-		if (this.onBranch === null) {
-			this.onBranch = branch;
+		this.onBranch = branch;
+		const branchName = branch.getName?.(); // Optional Chaining if getName() exists
+		if (branchName === 'main' || branchName === 'master') {
+			this.x = 0;
+		} else {
 			this.x = x;
 		}
+	}
+
+	public getBranch(): Branch | null {
+		return this.onBranch;
 	}
 
 	public isNotOnBranch() {
@@ -242,11 +256,6 @@ class Vertex {
 	public isOnThisBranch(branch: Branch) {
 		return this.onBranch === branch;
 	}
-
-	public getBranch() {
-		return this.onBranch;
-	}
-
 
 	/* Point */
 
@@ -729,7 +738,8 @@ class Graph {
 			}
 		} else {
 			// Branch is normal
-			let branch = new Branch(this.getAvailableColour(startAt));
+			const branchName = parentVertex?.getBranch()?.getName?.() || 'unnamed-branch';
+			let branch = new Branch(branchName, this.getAvailableColour(startAt));
 			vertex.addToBranch(branch, lastPoint.x);
 			vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
 			for (i = startAt + 1; i < this.vertices.length; i++) {
