@@ -18,6 +18,14 @@
 	"categories": [
 		"Other"
 	],
+	"homepage": "https://github.com/vm94/vscode-git-graph",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/vm94/vscode-git-graph.git"
+	},
+	"bugs": {
+		"url": "https://github.com/vm94/vscode-git-graph/issues"
+	},
 	"license": "SEE LICENSE IN 'LICENSE'",
 	"icon": "resources/icon.png",
 	"engines": {
